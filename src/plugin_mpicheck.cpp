@@ -46,8 +46,10 @@ class my_pass : public gimple_opt_pass {
 			post_dom_frontier(frontiers);
 			FOR_EACH_BB_FN(bb, fun) {
 				warn(bb, "Parsing");
-				bitmap_print(stdout, &frontiers[bb->index], "Bitmap: ", "\n");
 			}
+			bitmap_head bm;
+			bitmap_initialize(&bm, &bitmap_default_obstack);
+			bitmap_ior(&bm, &frontiers[4], &frontiers[5]);
 			release_frontiers(frontiers);
 
 			free_postdom();

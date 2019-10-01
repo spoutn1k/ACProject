@@ -43,4 +43,23 @@ std::vector<int> collectives(basic_block bb) {
 	return detected_codes;
 }
 
-bitmap_head* 
+bitmap_head* mpi_calls() {
+	basic_block bb;
+	bitmap_head* mpi_calls = XNEWVEC(bitmap_head, LAST_AND_UNUSED_MPI_COLLECTIVE_CODE);
+
+	for (int i = 0; i < LAST_AND_UNUSED_MPI_COLLECTIVE_CODE; i++)
+		bitmap_initialize(&mpi_calls[i], &bitmap_default_obstack);
+
+	FOR_EACH_BB_FN(bb, cfun) {
+		for (int n : collectives(bb))
+			bitmap_set_bit(&mpi_calls[n], bb->index);
+	}
+
+	return mpi_calls;
+}
+
+void release_calls(bitmap_head* mpi_calls) {
+	for (int i = 0; i < LAST_AND_UNUSED_MPI_COLLECTIVE_CODE; i++)
+		bitmap_release(&mpi_calls[i]);
+}
+

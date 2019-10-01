@@ -66,8 +66,36 @@ bitmap_head* init_frontiers() {
 	return frontiers;
 }
 
-void release(bitmap_head* frontiers) {
+void release_frontiers(bitmap_head* frontiers) {
 	basic_block bb;
 	FOR_EACH_BB_FN(bb, cfun)
 		bitmap_release(&frontiers[bb->index]);
+}
+
+void pdf_set(bitmap_head* res, const bitmap_head* frontiers, const bitmap_head* set) {
+	basic_block bb;
+	unsigned int bb_index;
+	bitmap_iterator biter;
+	bitmap_head tmp_bm, set_bar;
+	bitmap_initialize(&tmp_bm, &bitmap_default_obstack);
+	bitmap_initialize(&set_bar, &bitmap_default_obstack);
+	
+	// Join all the PDFs of the set's nodes
+	EXECUTE_IF_SET_IN_BITMAP(set, 0, bb_index, biter)
+		bitmap_ior_into(res, &frontiers[bb_index]);
+
+	// Add the PDFs of all the nodes of the jointure to the jointure
+	do {
+		bitmap_copy(&tmp_bm, res);
+		EXECUTE_IF_SET_IN_BITMAP(&tmp_bm, 0, bb_index, biter)
+			bitmap_ior_into(res, &frontiers[bb_index]);
+	} while (!bitmap_equal_p(res, &tmp_bm));
+
+	// We join the PDFs of every node NOT in the set, into set_bar
+	FOR_EACH_BB_FN(bb, cfun) {
+		if (!bitmap_bit_p(res, bb->index))
+			bitmap_ior_into(&set_bar, &frontiers[bb->index]);
+	}
+
+	bitmap_and_into(res, &set_bar);
 }
