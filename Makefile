@@ -13,4 +13,4 @@ test: test2.c
 	make -C src clean
 
 clean:
-	rm -rf *dot *so
+	rm -rf *so
