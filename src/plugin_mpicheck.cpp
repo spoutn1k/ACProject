@@ -3,6 +3,7 @@
 #include "cfgviz.h"
 #include "domination.h"
 #include "warn.h"
+#include <plugin-version.h>
 
 /* Global variable required for plugin to execute */
 int plugin_is_GPL_compatible;
@@ -47,10 +48,14 @@ class my_pass : public gimple_opt_pass {
 			FOR_EACH_BB_FN(bb, fun) {
 				warn(bb, "Parsing");
 			}
-			bitmap_head bm;
-			bitmap_initialize(&bm, &bitmap_default_obstack);
-			bitmap_ior(&bm, &frontiers[4], &frontiers[5]);
-			release_frontiers(frontiers);
+			bitmap_head set, res;
+			bitmap_initialize(&set, &bitmap_default_obstack);
+			bitmap_initialize(&res, &bitmap_default_obstack);
+			bitmap_set_bit(&set, 4);
+			bitmap_set_bit(&set, 5);
+			pdf_set(&res, frontiers, &set);
+
+			bitmap_print(stdout, &res, "Res: ", "\n");
 
 			free_postdom();
 

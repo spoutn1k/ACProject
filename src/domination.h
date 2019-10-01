@@ -16,5 +16,6 @@ void free_postdom();
 
 bitmap_head* init_frontiers();
 void release_frontiers(bitmap_head* frontiers);
+void pdf_set(bitmap_head*, const bitmap_head*, bitmap_head*);
 
 #endif

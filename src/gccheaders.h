@@ -3,7 +3,6 @@
 
 #include <gcc-plugin.h>
 #include <tree.h>
-#include <plugin-version.h>
 #include <basic-block.h>
 #include <gimple.h>
 #include <tree-pass.h>
