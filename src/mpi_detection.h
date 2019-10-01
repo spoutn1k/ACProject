@@ -1,15 +1,7 @@
 #ifndef MPI_DETECTION_H
 #define MPI_DETECTION_H
 
-#include <gcc-plugin.h>
-#include <tree.h>
-#include <plugin-version.h>
-#include <basic-block.h>
-#include <gimple.h>
-#include <tree-pass.h>
-#include <context.h>
-#include <function.h>
-#include <gimple-iterator.h>
+#include "gccheaders.h"
 #include <vector>
 
 enum mpi_collective_code {

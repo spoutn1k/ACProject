@@ -1,6 +1,7 @@
 #include <iostream>
 #include "mpi_detection.h"
 #include "cfgviz.h"
+#include "domination.h"
 #include "warn.h"
 
 /* Global variable required for plugin to execute */

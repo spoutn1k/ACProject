@@ -1,8 +1,7 @@
-#include <gcc-plugin.h>
-#include <plugin-version.h>
-#include <basic-block.h>
-#include <dominance.h>
-#include <function.h>
+#ifndef DOMINATION_H
+#define DOMINATION_H
+
+#include "gccheaders.h"
 
 void init_dom();
 
@@ -16,3 +15,4 @@ void print_postdominated(basic_block bb) ;
 
 void free_postdom() ;
 
+#endif
