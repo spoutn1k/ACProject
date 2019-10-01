@@ -18,6 +18,8 @@ const char *const mpi_collective_name[] = {
 };
 #undef DEFMPICOLLECTIVES
 
+bitmap_head* mpi_uses();
+
 std::vector<int> collectives(basic_block bb);
 void aux_reset(function* fun);
 int bloc_double_MPI(basic_block bb);

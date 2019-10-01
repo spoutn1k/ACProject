@@ -43,3 +43,4 @@ std::vector<int> collectives(basic_block bb) {
 	return detected_codes;
 }
 
+bitmap_head* 

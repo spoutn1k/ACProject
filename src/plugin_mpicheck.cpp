@@ -40,9 +40,17 @@ class my_pass : public gimple_opt_pass {
 			printf("[execute] parsing function: %s\n", function_name(fun));
 			basic_block bb;
 
+			init_postdom();
+
+			bitmap_head* frontiers = init_frontiers();
+			post_dom_frontier(frontiers);
 			FOR_EACH_BB_FN(bb, fun) {
 				warn(bb, "Parsing");
+				bitmap_print(stdout, &frontiers[bb->index], "Bitmap: ", "\n");
 			}
+			release_frontiers(frontiers);
+
+			free_postdom();
 
 			cfgviz_dump(fun);
 
