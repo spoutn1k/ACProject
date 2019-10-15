@@ -40,26 +40,8 @@ class my_pass : public gimple_opt_pass {
 
 		unsigned int execute (function *fun) {
 			printf("[execute] parsing function: %s\n", function_name(fun));
-			basic_block bb;
-
-			init_postdom();
-
-			bitmap_head* frontiers = init_frontiers();
-			post_dom_frontier(frontiers);
-			FOR_EACH_BB_FN(bb, fun) {
-				warn(bb, "Parsing");
-			}
-			bitmap_head set, res;
-			bitmap_initialize(&set, &bitmap_default_obstack);
-			bitmap_initialize(&res, &bitmap_default_obstack);
-			bitmap_set_bit(&set, 4);
-			bitmap_set_bit(&set, 5);
-			pdf_set(&res, frontiers, &set);
-
-			bitmap_print(stdout, &res, "Res: ", "\n");
-
-			free_postdom();
-
+			isolate_mpi();
+			print_mpi_calls();
 			cfgviz_dump(fun);
 
 			return 0;
@@ -71,13 +53,13 @@ int plugin_init(struct plugin_name_args * plugin_info,
 		struct plugin_gcc_version * version) {
 	struct register_pass_info my_pass_info;
 
-	printf( "plugin_init: Entering...\n" ) ;
+	//printf( "plugin_init: Entering...\n" ) ;
 
 	/* First check that the current version of GCC is the right one */
 	if (!plugin_default_version_check(version, &gcc_version))
 		return 1;
 
-	printf( "plugin_init: Check ok...\n" ) ;
+	//printf( "plugin_init: Check ok...\n" ) ;
 
 	/* Declare and build my new pass */
 	my_pass p(g);
@@ -95,9 +77,11 @@ int plugin_init(struct plugin_name_args * plugin_info,
 			NULL,
 			&my_pass_info);
 
-	register_callback(plugin_info->base_name, PLUGIN_PRAGMAS, register_pragmas, NULL);
+	register_callback(plugin_info->base_name,
+			PLUGIN_PRAGMAS,
+			register_pragmas,
+			NULL);
 
-	printf( "plugin_init: Pass added...\n" ) ;
-
+	//printf( "plugin_init: Pass added...\n" ) ;
 	return 0;
 }

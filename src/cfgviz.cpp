@@ -1,4 +1,5 @@
 #include "cfgviz.h"
+#include <cstring>
 
 /* Build a filename (as a string) based on function name */
 static char * cfgviz_generate_filename( function * fun) {
@@ -14,19 +15,40 @@ static char * cfgviz_generate_filename( function * fun) {
 	return target_filename ;
 }
 
+void cfgviz_generate_label(basic_block bb, char* buffer) {
+	gimple_stmt_iterator gsi;
+	gimple *stmt;
+	sprintf(buffer, "BB%d\n", bb->index);
+
+	for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi)) {
+		/* Get the current statement */
+		stmt = gsi_stmt(gsi);
+
+		if (is_gimple_call (stmt)) {
+			tree t = gimple_call_fndecl(stmt);
+			strcat(buffer, IDENTIFIER_POINTER(DECL_NAME(t)));
+			strcat(buffer, "\n");
+		}
+	}
+}
+
 /* Dump the graphviz representation of function 'fun' in file 'out' */
 static void cfgviz_internal_dump( function * fun, FILE * out) {
 	basic_block bb;
+	char buffer[1000];
 	fun = (fun + 0);
 
 	// Print the header line and open the main graph
 	fprintf(out, "Digraph G{\n");
 
 	FOR_ALL_BB_FN(bb,cfun) {
+		memset(buffer, 0, 1000);
+		cfgviz_generate_label(bb, buffer);
+
 		fprintf( out,
-				"%d [label=\"BB %d",
+				"%d [label=\"%s",
 				bb->index,
-				bb->index
+				buffer
 			   );
 
 		fprintf(out, "\" shape=ellipse]\n");

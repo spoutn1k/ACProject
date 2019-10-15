@@ -1,4 +1,3 @@
-#include <gcc-plugin.h>
-#include <function.h>
+#include "gccheaders.h"
 
 void cfgviz_dump(function* fun);

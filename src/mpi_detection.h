@@ -22,6 +22,8 @@ bitmap_head* mpi_calls();
 
 std::vector<int> collectives(basic_block bb);
 void aux_reset(function* fun);
-int bloc_double_MPI(basic_block bb);
+int bloc_double_mpi(basic_block bb);
+void isolate_mpi();
+void print_mpi_calls();
 
 #endif
