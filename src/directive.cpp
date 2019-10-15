@@ -1,9 +1,9 @@
 #include "directive.h"
 
-std::vector<const char*> args = {};
+std::vector<const char*> funcname;
 
 void register_pragmas(void* gcc_data, void* user_data) {
-	c_register_pragma("instrument","function", handle_pragma_function);
+	c_register_pragma("mpicoll","check", handle_pragma_function);
 }
 
 void handle_pragma_function(struct cpp_reader* useless) {
@@ -27,8 +27,7 @@ void handle_pragma_function(struct cpp_reader* useless) {
 		do {
 			while (token == CPP_COMMA)
 				token = pragma_lex(&t);
-			args.push_back(IDENTIFIER_POINTER(t));
-			printf("%s\n",IDENTIFIER_POINTER(t));
+			funcname.push_back(IDENTIFIER_POINTER(t));
 			token = pragma_lex(&t);
 		}
 		while (token == CPP_NAME || token == CPP_COMMA);
