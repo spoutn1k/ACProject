@@ -4,13 +4,13 @@ void register_pragmas(void* gcc_data, void* user_data) {
 	c_register_pragma("instrument","function", handle_pragma_function);
 }
 
-static void handle_pragma_function(struct cpp_reader* useless) {
+void handle_pragma_function(struct cpp_reader* useless) {
 	enum cpp_ttype token;
 	tree t;
 	token = pragma_lex(&t);
 	bool close_paren_needed_p = false;
 	if (cfun) {
-		error ("PAS DE PRAGMA DANS LES FONCTIONS");
+		printf ("PAS DE PRAGMA DANS LES FONCTIONS");
 		return;
 	}
 	if (token == CPP_OPEN_PAREN) {
@@ -18,15 +18,17 @@ static void handle_pragma_function(struct cpp_reader* useless) {
 		token = pragma_lex(&t);
 	}
 	if (token != CPP_NAME) {
-		GCC_BAD (" Mdr c'est pas un nom de fonction");
+		printf (" Mdr c'est pas un nom de fonction");
 		return;
 	}
 	else {
-		tree args = NULL_TREE;
+		std::vector<const char*> args;
 		do {
 			while (token == CPP_COMMA)
 				token = pragma_lex(&t);
-			
+			args.push_back(IDENTIFIER_POINTER(t));
+			printf("%s\n",IDENTIFIER_POINTER(t));
+			token = pragma_lex(&t);
 		}
 		while (token == CPP_NAME || token == CPP_COMMA);
 	}	
@@ -34,11 +36,10 @@ static void handle_pragma_function(struct cpp_reader* useless) {
 		if (token == CPP_CLOSE_PAREN)
 			token = pragma_lex (&t);
 		else
-			GCC_BAD ("Ferme tes parentheses");
+			printf ("Ferme tes parentheses");
 	}
 	if (token != CPP_EOF) {
-		error ("Il est ou le retour a la ligne apres ton pragma ?");
+		printf ("Il est ou le retour a la ligne apres ton pragma ?");
 		return;
 	}
-		
 }
