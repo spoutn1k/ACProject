@@ -1,5 +1,7 @@
 #include "directive.h"
 
+std::vector<const char*> args = {};
+
 void register_pragmas(void* gcc_data, void* user_data) {
 	c_register_pragma("instrument","function", handle_pragma_function);
 }
@@ -22,7 +24,6 @@ void handle_pragma_function(struct cpp_reader* useless) {
 		return;
 	}
 	else {
-		std::vector<const char*> args;
 		do {
 			while (token == CPP_COMMA)
 				token = pragma_lex(&t);
