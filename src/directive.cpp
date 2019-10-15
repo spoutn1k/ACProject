@@ -1,10 +1,10 @@
 #include "directive.h"
 
-void register_pragma(void* gcc_data,void* user_data) {
-	c_register_pragma("instrument","function",handle_pragma_function);
+void register_pragmas(void* gcc_data, void* user_data) {
+	c_register_pragma("instrument","function", handle_pragma_function);
 }
 
-static void handle_pragma_function(cpp_reader* useless) {
+static void handle_pragma_function(struct cpp_reader* useless) {
 	enum cpp_ttype token;
 	tree t;
 	token = pragma_lex(&t);
