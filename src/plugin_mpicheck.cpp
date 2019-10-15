@@ -3,6 +3,7 @@
 #include "cfgviz.h"
 #include "domination.h"
 #include "warn.h"
+#include "directive.h"
 #include <plugin-version.h>
 
 /* Global variable required for plugin to execute */
@@ -93,6 +94,8 @@ int plugin_init(struct plugin_name_args * plugin_info,
 			PLUGIN_PASS_MANAGER_SETUP,
 			NULL,
 			&my_pass_info);
+
+	register_callback(plugin_info->base_name, PLUGIN_PRAGMAS, register_pragmas, NULL);
 
 	printf( "plugin_init: Pass added...\n" ) ;
 

@@ -10,5 +10,6 @@
 #include <function.h>
 #include <gimple-iterator.h>
 #include <dominance.h>
+#include <c-family/c-pragma.h>
 
 #endif
