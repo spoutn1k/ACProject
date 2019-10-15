@@ -24,15 +24,17 @@ static void handle_pragma_function(cpp_reader* useless) {
 	else {
 		tree args = NULL_TREE;
 		do {
+			while (token == CPP_COMMA)
+				token = pragma_lex(&t);
 			
 		}
-		while (token == CPP_NAME);
+		while (token == CPP_NAME || token == CPP_COMMA);
 	}	
 	if (close_paren_needed_p) {
 		if (token == CPP_CLOSE_PAREN)
-			token = pragma_lex (&x);
+			token = pragma_lex (&t);
 		else
-			GCC_BAD ("Ferme tes parentheses wallah");
+			GCC_BAD ("Ferme tes parentheses");
 	}
 	if (token != CPP_EOF) {
 		error ("Il est ou le retour a la ligne apres ton pragma ?");
