@@ -34,8 +34,14 @@ class my_pass : public gimple_opt_pass {
 		}
 
 		bool gate (function *fun) {
-			printf("[gate] processing function: %s\n", function_name(fun));
-			return true;
+			for (int i = 0 ; i < funcname.size(); i++) {
+				if (!strcmp(funcname[i],function_name(fun))) {
+					funcname.erase(funcname.begin()+i);
+					printf("[gate] processing function: %s\n", function_name(fun));
+					return true;	
+				}
+			}
+			return false;
 		}
 
 		unsigned int execute (function *fun) {

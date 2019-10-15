@@ -7,6 +7,8 @@
 #ifndef DIRECTIVE_H
 #define DIRECTIVE_H
 
+extern std::vector<const char*> funcname;
+
 void register_pragmas(void*, void*);
 
 void handle_pragma_function(cpp_reader *);
