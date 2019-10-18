@@ -47,9 +47,10 @@ class my_pass : public gimple_opt_pass {
 		unsigned int execute (function *fun) {
 			printf("[execute] parsing function: %s\n", function_name(fun));
 			isolate_mpi();
-			print_mpi_calls();
+			bitmap_head* sets = mpi_calls();
+			bitmap_head* res = compute_pdf_sets(sets);	
+			print_mpi_calls();			
 			cfgviz_dump(fun);
-
 			return 0;
 		}
 };
