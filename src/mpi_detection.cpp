@@ -43,6 +43,15 @@ std::vector<int> collectives(basic_block bb) {
 	return detected_codes;
 }
 
+int collective(basic_block bb) {
+	std::vector<int> detected = collectives(bb);
+
+	if (detected.size() != 1)
+		return -1;
+
+	return detected[0];
+}
+
 bitmap_head* mpi_calls() {
 	basic_block bb;
 	bitmap_head* mpi_calls = XNEWVEC(bitmap_head, LAST_AND_UNUSED_MPI_COLLECTIVE_CODE);

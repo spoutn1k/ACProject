@@ -11,5 +11,6 @@
 #include <gimple-iterator.h>
 #include <dominance.h>
 #include <c-family/c-pragma.h>
+#include <cfgloop.h>
 
 #endif

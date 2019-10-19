@@ -21,6 +21,7 @@ const char *const mpi_collective_name[] = {
 bitmap_head* mpi_calls();
 
 std::vector<int> collectives(basic_block bb);
+int collective(basic_block bb);
 void aux_reset(function* fun);
 int bloc_double_mpi(basic_block bb);
 void isolate_mpi();

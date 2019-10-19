@@ -4,6 +4,8 @@
 #include "domination.h"
 #include "warn.h"
 #include "directive.h"
+#include "path.h"
+#include <graph.h>
 #include <plugin-version.h>
 
 /* Global variable required for plugin to execute */
@@ -33,7 +35,7 @@ class my_pass : public gimple_opt_pass {
 			return new my_pass(g);
 		}
 
-		bool gate (function *fun) {
+		bool gate (function* fun) {
 			for (int i = 0 ; i < funcname.size(); i++) {
 				if (!strcmp(funcname[i],function_name(fun))) {
 					funcname.erase(funcname.begin()+i);
@@ -44,11 +46,22 @@ class my_pass : public gimple_opt_pass {
 			return false;
 		}
 
-		unsigned int execute (function *fun) {
+		unsigned int execute (function* fun) {
 			printf("[execute] parsing function: %s\n", function_name(fun));
+			basic_block bb;
+
 			isolate_mpi();
 			print_mpi_calls();
 			cfgviz_dump(fun);
+
+			print_graph_cfg("/tmp/graph", fun);
+			FOR_EACH_BB_FN(bb, fun) {
+				PathFinder checker(bb);
+				if (checker.common_path())
+					std::cout << bb->index << ": Path is unique\n";
+				else
+					std::cout << bb->index << ": Path is divergent\n";
+			}
 
 			return 0;
 		}
