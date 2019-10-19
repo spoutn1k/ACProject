@@ -101,3 +101,17 @@ void pdf_set(bitmap_head* res, const bitmap_head* frontiers, bitmap_head* set) {
 
 	bitmap_release(&tmp_bm);
 }
+
+
+bitmap_head* compute_pdf_sets(bitmap_head* sets) {
+	bitmap_head* frontiers = init_frontiers();
+	init_postdom();
+	post_dom_frontier(frontiers);
+	bitmap_head* res = XNEWVEC(bitmap_head,LAST_AND_UNUSED_MPI_COLLECTIVE_CODE);
+	for (int i = 0; i < LAST_AND_UNUSED_MPI_COLLECTIVE_CODE; i++) {
+		bitmap_initialize(&res[i],&bitmap_default_obstack);
+		pdf_set(&res[i],frontiers,&sets[i]);
+	}
+	free_postdom();	
+	return res;
+}
