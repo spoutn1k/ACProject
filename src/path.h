@@ -11,6 +11,7 @@
 // It is initialised with a basic block, then used by calling the `common_path` method
 class PathFinder {
 	public:
+		basic_block origin;
 		PathFinder(basic_block bb);
 
 		// This method is the core of the object's functionnality
@@ -27,7 +28,6 @@ class PathFinder {
 		void state_objective();
 
 	private:
-		basic_block origin;
 		bool done;
 
 		// This stack is the central element of the object, each element

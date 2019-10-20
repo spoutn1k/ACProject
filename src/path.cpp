@@ -43,7 +43,7 @@ bool PathFinder::common_path() {
 		if ((coll = collective(current)) != -1) {
 			// If it is different, then all paths are not equal
 			// ABORT and return false
-			if (coll != path[index])
+			if (coll != (int) path[index])
 				return false;
 
 			// If it is, just mark that we expect the next collective

@@ -8,16 +8,7 @@ int is_mpi(const char* func_name) {
 };
 #undef DEFMPICOLLECTIVES
 
-/* Enum to represent the collective operations */
-void aux_reset(function* fun) {
-	basic_block bb;
-
-	FOR_EACH_BB_FN(bb, fun) {
-		bb->aux = 0;
-	}
-}
-
-int bloc_double_mpi(basic_block bb) {
+bool bloc_double_mpi(basic_block bb) {
 	return collectives(bb).size() > 1;
 }
 

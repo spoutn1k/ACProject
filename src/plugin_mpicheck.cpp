@@ -36,7 +36,7 @@ class my_pass : public gimple_opt_pass {
 		}
 
 		bool gate (function* fun) {
-			for (int i = 0 ; i < funcname.size(); i++) {
+			for (long unsigned int i = 0 ; i < funcname.size(); i++) {
 				if (!strcmp(funcname[i],function_name(fun))) {
 					funcname.erase(funcname.begin()+i);
 					printf("[gate] processing function: %s\n", function_name(fun));
@@ -48,26 +48,32 @@ class my_pass : public gimple_opt_pass {
 
 		unsigned int execute (function* fun) {
 			printf("[execute] parsing function: %s\n", function_name(fun));
-			basic_block bb;
 
 			isolate_mpi();
 			bitmap_head* sets = mpi_calls();
 			bitmap_head* res = compute_pdf_sets(sets);	
-			print_mpi_calls();			
-			cfgviz_dump(fun);
 
-			print_graph_cfg("/tmp/graph", fun);
-			FOR_EACH_BB_FN(bb, fun) {
-				PathFinder checker(bb);
-				if (checker.common_path())
-					std::cout << bb->index << ": Path is unique\n";
-				else
-					std::cout << bb->index << ": Path is divergent\n";
+			cfgviz_dump(fun);
+			bitmap_iterator bi;
+			unsigned int bb_index;
+			basic_block bb;
+
+			for (int i = 0; i < LAST_AND_UNUSED_MPI_COLLECTIVE_CODE; i++) {
+				EXECUTE_IF_SET_IN_BITMAP(&res[i], 0, bb_index, bi) {
+					bb = BASIC_BLOCK_FOR_FN(fun, bb_index);
+					PathFinder checker(bb);
+					if (!checker.common_path() && bb->loop_father->num == 0)
+						divergent_warning(bb, i);
+				}
 			}
+
+			release_calls(res);
+			release_calls(sets);
 
 			return 0;
 		}
 };
+//print_graph_cfg("/tmp/graph", fun);
 
 /* Main entry point for plugin */
 int plugin_init(struct plugin_name_args * plugin_info,

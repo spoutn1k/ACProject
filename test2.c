@@ -3,6 +3,7 @@
 
 #include <mpi.h>
 
+#pragma mpicoll check (main)
 
 int main(int argc, char * argv[]) {
 	MPI_Init(&argc, &argv);
@@ -31,7 +32,18 @@ int main(int argc, char * argv[]) {
 		b = b*4;
 	}
 
-	c+= (a+b);
+	for (a = 0; a < 10; a += 2) {
+		b += 1;
+		if (b+a == 4) {
+			MPI_Barrier(MPI_COMM_WORLD);
+		} else {
+			MPI_Finalize();
+		}
+	}
+
+	for (a = 0; a < 10; a += 2) {
+		b++;
+	}
 
 	printf("c=%d\n", c);
 

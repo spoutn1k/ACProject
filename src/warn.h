@@ -1,13 +1,12 @@
 #include "mpi_detection.h"
+#include <diagnostic.h>
 
-void warn(basic_block bb, const char* error) {
-	printf("[WARNING] %s in basic block %d\n", error, bb->index);
-}
+void divergent_warning(basic_block bb, const int collective) {
+	gimple_stmt_iterator gsi;
+	gimple *stmt;
 
-void warning(const char* name,const char* warning) {
-	printf("[WARNING] in function %s : %s\n",name,warning);
-}
+	for (gsi = gsi_start_bb(bb); !gsi_end_p (gsi); gsi_next (&gsi))
+		stmt = gsi_stmt(gsi);
 
-void warningline(const char* name,const char* warning,int line) {
-	printf("[WARNING] in function %s at line l.%i: %s\n",name,line,warning);
+	warning_at(gimple_location(stmt), 0, "Calls to %s may be avoided from this location", mpi_collective_name[collective]);
 }
