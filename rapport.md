@@ -3,6 +3,12 @@ Gavoille Clément - Skutnik Jean-Baptiste
 
 ## Introduction
 
+Le framework `MPI` met en place des fonctions permettant aux programmes de communiquer lors de l'exécution pour faciliter la parallélisation de calculs. Cependant introduire des communications dans un code peut entraîner des ralentissements, voir des arrêts indéfinis lors d'une erreur ou d'un mauvais agencement des fonctions de communication par l'utilisateur.
+
+Ce projet propose de créer un plugin `GCC`, qui lors de la compilation, va vérifier que les fonctions collectives `MPI` sont traversées par tous les cas possibles d'exécution du programme, assurant ainsi que le programme ne sera jamais dans une impasse.
+
+Pour ce faire, l'utilisation de l'`API GCC` est indispensable, permettant d'interagir avec les étapes de compilation, en introduisant une 'passe' qui implémente certaines fonctions clés.
+
 ## Partie 1: Vérification de la séquence d'appel aux fonctions collectives MPI
 
 La passe de compilation travaille sur une représentation du code interne à `GCC`, qui prend la forme d'un graphe orienté, nommé `Control Flow Graph`, qui représente le code et les différentes suites d'instructions pouvant être exécutées lors de l'exécution d'un programme.  
