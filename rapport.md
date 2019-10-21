@@ -50,6 +50,8 @@ La séparation des blocs se fait grâce à la fonction `isolate_mpi` définie da
 
 ### Étude du graphe de flot de contrôle pour déterminer les divergences
 
+
+
 ### Détermination des noeuds à risque
 
 Une fois l'ensemble des noeuds à tester déterminé, il s'agit de vérifier que les divergences potentielles existent.
@@ -86,6 +88,12 @@ L'algorithme va alors effectuer un parcours en profondeur classique du graphe, m
 À chaque appel `MPI` rencontré, le programme vérifie qu'il corresponde à celui de la suite de référence, à l'index indiqué.  
 Si il correspond, le parcours continue, en incrémentant de 1 l'index ; sinon, le programme s'arrête en renvoyant `false`, car cela implique que cette suite d'appel ne suit pas la référence.
 
+Cet algorithme, et les parcours en profondeur en général, peuvent rester bloqués lors de l'analyse de boucles ; et dans des cas d'usage réels des boucles sont garanties.
+
+Nous avons pris la décision de ne pas analyser les boucles.
+
+Le framework `GCC` délimitant et catégorisant les boucles à été utilisé pour déterminer l'appartenance d'un `basic_block` à une boucle, mais le système de prédictions de `GCC` n'a pas été utilisé pour faire des suppositions. À la place, le programme évite l'analyse si un noeud à risque est dans une boucle.
+
 ### Affichage d'un warning à l'utilisateur
 
 L'implémentation des avertissement est basée sur la structure fournie par `GCC` :
@@ -110,14 +118,33 @@ test2.c:15:4: warning: Calls to MPI_Barrier may be avoided from this location
       |    ^
 ```
 
-## Partie 2: Gestion des directives (obligatoire)
+## Partie 2: Gestion des directives
 
 ### Définition et format
 
+L'utilisation des directives dans le programme permet à l'utilisateur de contrôler facilement le comportement du plugin, en utilisant un format de messages standardisé dans `GCC`.
+
+Dans ce plugin, les directives définies servent à spécifier les fonctions à analyser. Elles prennent les formes suivantes:
+```
+#pragma mpicoll check f1
+#pragma mpicoll check (f2, f3)
+```
+
+Les directives introduites dans le plugin suivent les règles suivantes:
+- Elles ne peuvent apparaître dans un corps de fonction ; 
+- Plusieurs directives peuvent apparaître, mais chaque fonction doit être spécifiée une seule fois ; 
+- Une fonction peut être spécifiée uniquement si elle est présente dans le code source.
+
+Enfreindre une de ces règles provoquera un avertissement pour l'utilisateur.
+
 ### Gestion des directives
-La gestion de cette directive est active des que le plugin GCC de ce projet est utilisé. Les fonctions présentes dans ces directives sont alors analysées. Si une fonction est présente dans le code source à compiler, mais non renseignée par une telle directive, l'analyse n'est pas effectuée.
-Un fichier source peut utiliser plusieurs fois cette directive en mélangeant les deux formes. Cette directive ne peut être utilisée qu'en dehors de toute fonction.
-Un warning devra être émis à l'utilisateur s'il spécifie une fonction dans cette directive qui n'existe pas dans le code source. De plus, un warning sera émis si une fonction est spécifiée plusieurs fois dans l'ensemble des directives
+
+Les directives sont interprêtées par deux fonctions définies par le plugin : 
+
+- `handle_pragma_function`: lit les directives et enregistre les fonctions dans une zone mémoire interne. Les directives erronées ou redondantes génèrent un avertissement à l'utilisateur.
+- `wrap_mpicoll`: génère un avertissement pour toutes les fonctions dans la zone mémoire à la fin de l'exécution de `GCC`, indiquant que leur définition n'a pas été trouvée dans le code.
+
+Lors de l'exécution de la passe, la fonction `gate` du plugin prend en compte les fonctions enregistrées pendant `handle_pragma_function` pour ne lancer l'exécution que sur les fonctions spécifiées.
 
 ## Sources
 
