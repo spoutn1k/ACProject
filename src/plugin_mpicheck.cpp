@@ -15,7 +15,7 @@ int plugin_is_GPL_compatible;
 const pass_data my_pass_data =
 {
 	GIMPLE_PASS, /* type */
-	"NEW_PASS", /* name */
+	"MPI_COLL", /* name */
 	OPTGROUP_NONE, /* optinfo_flags */
 	TV_OPTIMIZE, /* tv_id */
 	0, /* properties_required */
@@ -36,34 +36,35 @@ class my_pass : public gimple_opt_pass {
 		}
 
 		bool gate (function* fun) {
-			for (long unsigned int i = 0 ; i < funcname.size(); i++) {
-				if (!strcmp(funcname[i],function_name(fun))) {
-					funcname.erase(funcname.begin()+i);
-					printf("[gate] processing function: %s\n", function_name(fun));
-					return true;	
-				}
+			if (is_registered(function_name(fun))) {
+				mark_processed(function_name(fun));
+				return true;
 			}
+
 			return false;
 		}
 
 		unsigned int execute (function* fun) {
-			printf("[execute] parsing function: %s\n", function_name(fun));
+			basic_block bb;
+			bitmap_iterator bi;
+			unsigned int bb_index;
 
+			// Isolate the MPI calls on a basic block each
 			isolate_mpi();
 			bitmap_head* sets = mpi_calls();
 			bitmap_head* res = compute_pdf_sets(sets);	
 
-			cfgviz_dump(fun);
-			bitmap_iterator bi;
-			unsigned int bb_index;
-			basic_block bb;
+			//cfgviz_dump(fun);
 
+			// For every defined collective
 			for (int i = 0; i < LAST_AND_UNUSED_MPI_COLLECTIVE_CODE; i++) {
+				// For every bb in its post dominance set
 				EXECUTE_IF_SET_IN_BITMAP(&res[i], 0, bb_index, bi) {
 					bb = BASIC_BLOCK_FOR_FN(fun, bb_index);
 					PathFinder checker(bb);
+					// If the mpi sequence is not unique and its not a loop
 					if (!checker.common_path() && bb->loop_father->num == 0)
-						divergent_warning(bb, i);
+						divergent_warning(bb, i); // Raise a warning
 				}
 			}
 
@@ -73,20 +74,15 @@ class my_pass : public gimple_opt_pass {
 			return 0;
 		}
 };
-//print_graph_cfg("/tmp/graph", fun);
 
 /* Main entry point for plugin */
 int plugin_init(struct plugin_name_args * plugin_info,
 		struct plugin_gcc_version * version) {
 	struct register_pass_info my_pass_info;
 
-	//printf( "plugin_init: Entering...\n" ) ;
-
 	/* First check that the current version of GCC is the right one */
 	if (!plugin_default_version_check(version, &gcc_version))
 		return 1;
-
-	//printf( "plugin_init: Check ok...\n" ) ;
 
 	/* Declare and build my new pass */
 	my_pass p(g);
@@ -100,15 +96,19 @@ int plugin_init(struct plugin_name_args * plugin_info,
 
 	/* Add my pass to the pass manager */
 	register_callback(plugin_info->base_name,
+			PLUGIN_PRAGMAS,
+			register_pragmas,
+			NULL);
+
+	register_callback(plugin_info->base_name,
 			PLUGIN_PASS_MANAGER_SETUP,
 			NULL,
 			&my_pass_info);
 
 	register_callback(plugin_info->base_name,
-			PLUGIN_PRAGMAS,
-			register_pragmas,
+			PLUGIN_ALL_PASSES_END,
+			wrap_mpicoll,
 			NULL);
 
-	//printf( "plugin_init: Pass added...\n" ) ;
 	return 0;
 }

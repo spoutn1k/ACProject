@@ -58,7 +58,7 @@ void free_postdom() {
 
 bitmap_head* init_frontiers() {
 	basic_block bb;
-	bitmap_head* frontiers = XNEWVEC (bitmap_head, last_basic_block_for_fn (cfun));
+	bitmap_head* frontiers = XNEWVEC(bitmap_head, last_basic_block_for_fn (cfun));
 
 	FOR_EACH_BB_FN(bb, cfun)
 		bitmap_initialize(&frontiers[bb->index], &bitmap_default_obstack);
@@ -116,6 +116,7 @@ bitmap_head* compute_pdf_sets(bitmap_head* sets) {
 		pdf_set(&res[i], frontiers, &sets[i]);
 	}
 
+	release_frontiers(frontiers);
 	free_postdom();	
 	return res;
 }
