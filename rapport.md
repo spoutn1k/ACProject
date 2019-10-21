@@ -50,26 +50,43 @@ La séparation des blocs se fait grâce à la fonction `isolate_mpi` définie da
 
 ### Étude du graphe de flot de contrôle pour déterminer les divergences
 
+Les noeuds contenant des collectives `MPI` à analyser sont regroupés en ensembles, représentés en mémoire par des `bitmaps`, de l'`API GCC`.
 
+Dans le code, la fonction `mpi_calls` effectue ce traitement. Elle renvoie un tableau de `bitmaps` de taille égale au nombre de collectives `MPI` définies dans le programme. Dans la `bitmap` d'index `k`, les bits d'index `i` valent `1` si le `basic block` d'index `i` contient la collective d'index `k` correspondant.
+
+Ces ensembles sont alors utilisés dans le calcul de leur frontières de post-dominance. On calcule la frontière de post-dominance d'un noeud de la manière suivante:
+
+$$
+On\ note\ n\ post\ domine\ z\ par\ n \\triangleright z
+$$
+$$
+PDF(n) = \\{z\ |\ \\forall (m,z) \\in \\Omega,\ m \\to z\ |\ n \\triangleright m,\ n \\ntriangleright z\\}
+$$
+
+À l'aide des frontières de post-dominance des noeuds, la frontière de post-dominance de l'ensemble est calculée suivant la formule:
+
+$$
+PDF(N) = \\{z\ |\ z \\in \\cup\_{n \\in N}\ PDF(n),\ z \\in \\cup\_{k \\in \\bar{N}}\ PDF(k) \\}
+$$
+
+La frontière de post-dominance d'un ensemble nous permet de déterminer les noeuds à partir desquels il existe un chemin ne passant pas par un noeud de l'ensemble. La fonction `compute_pdf_sets` renvoie un objet similaire à `mpi_calls` contenant cette information.
 
 ### Détermination des noeuds à risque
 
-Une fois l'ensemble des noeuds à tester déterminé, il s'agit de vérifier que les divergences potentielles existent.
+Une fois l'ensemble des noeuds à tester déterminé, il s'agit de vérifier que les divergences potentielles existent. Pour ce faire, un parcours en profondeur du graphe depuis les noeuds sélectionnés va être effectué. 
 
-Pour ce faire, un parcours en profondeur du graphe depuis les noeuds sélectionnés va être effectué. 
-
-L'algorithme effectuant le parcours est le suivant, en pseudo-code
+L'algorithme effectuant le parcours est le suivant, en pseudo-code:
 ```
 std::vector<unsigned int> suite = {}
 typedef stack_el std::pair<basic_block, unsigned int>
 std::vector<stack_el> pile = {}
 
-chemin = parcours_simple(bb)
+suite = parcours_simple(bb)
 
 tant que pile.size() > 0:
 	current_bb, index = pile.pop()
 	si collective dans current_bb:
-		si collective != chemin[index]:
+		si collective != suite[index]:
 			retourner false
 		sinon
 			index = index + 1
