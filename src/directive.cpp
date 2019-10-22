@@ -16,9 +16,11 @@ bool is_registered(const char* fname) {
 }
 
 void mark_processed(const char* fname) {
-	for (auto it = funcname.begin(); it != funcname.end(); ++it) {
+	for (auto it = funcname.begin(); it != funcname.end();) {
 		if (!strcmp(*it, fname))
             funcname.erase(it);
+		else
+			++it;
 	}
 }
 
