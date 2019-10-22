@@ -173,7 +173,7 @@ Lors de l'exécution de la passe, la fonction `gate` du plugin prend en compte l
 
 ### Test 1 :
 
-__Code source :__
+__Code source__:
 
 ```
 int easy1(int a) {
@@ -186,17 +186,17 @@ int easy1(int a) {
 }
 ```
 
-__CFG :
+__CFG__:
 
 ![test](easy3.png)
 
-__Résultat : 
+__Résultat__: 
 
 Aucun problème, la PDF de l'ensemble {3,4} est nulle, il n'y a donc aucun noeuds à risque.
 
 ### Test 2 :
 
-__Code source :__ 
+__Code source__:
 
 ```
 int easy2(int a) {
@@ -211,11 +211,11 @@ int easy2(int a) {
         return 0;
 }
 ```
-__CFG :
+__CFG__:
 
 ![test](easy2.png)
 
-__Résultat :
+__Résultat__:
 
 ```
 test2.c: In function ‘easy2’:
@@ -230,7 +230,7 @@ Ici, la PDF des deux ensembles contient le noeud 2. Lors de l'analyse des chemin
 
 ### Test 3
 
-__Code Source :
+__Code Source__:
 
 ```
 int easy3(int a) {
@@ -243,15 +243,14 @@ int easy3(int a) {
         return 0;
 }
 ```
-__CFG :
+__CFG__:
 
 ![test](easy1.png)
 
-__Résultat :
+__Résultat__:
 
 La passe ne renvoie rien alors qu'il y a un problème. En effet, elle travaille sur l'ensemble de noeuds {3,4,6} et la PDF de cet ensemble est vide. Elle n'effectue donc pas l'analyse des chemins et ne détecte donc pas la différence de séquence d'appels entre les deux chemins. Pour qu'elle traite ce problème, il faudrait séparer l'ensemble de travail en {3,4} et {6}.
 
----
 ## Conclusion
 
 Le projet dans son ensemble répond à la problématique donnée. La passe de compilation analyse l'algorithme, et renvoie un avertissement à l'utilisateur lorsqu'une divergence est détectée.
@@ -270,3 +269,37 @@ En outre, l'implémentation d'une analyse inter-procédurale permettrait à la p
 |`Basic Blocks`|[GCC Documentation](https://gcc.gnu.org/onlinedocs/gccint/Basic-Blocks.html)|
 |`GENERIC`|[GCC Documentation](https://gcc.gnu.org/onlinedocs/gccint/GENERIC.html)|
 |`GIMPLE`|[GCC Documentation](https://gcc.gnu.org/onlinedocs/gccint/GIMPLE.html)|
+
+## Annexe 1: Code source réel
+
+Le fichier intervals contient un code source `MPI` existant sur lequel notre passe détecte les divergences de séquence de colectives.
+
+__CFG__:
+
+![cfg-intervals](intervals.png)
+
+__Résultat__:
+
+```
+intervals.c: In function ‘main’:
+intervals.c:113:6: warning: Calls to MPI_Finalize may be avoided from this location
+  113 |   if ( ierr != 0 )
+      |      ^
+intervals.c:132:6: warning: Calls to MPI_Finalize may be avoided from this location
+  132 |   if ( process_id == master )
+      |      ^
+intervals.c:147:8: warning: Calls to MPI_Finalize may be avoided from this location
+  147 |     if ( process_num <= 1 )
+      |        ^
+intervals.c:113:6: warning: Calls to MPI_Barrier may be avoided from this location
+  113 |   if ( ierr != 0 )
+      |      ^
+intervals.c:132:6: warning: Calls to MPI_Barrier may be avoided from this location
+  132 |   if ( process_id == master )
+      |      ^
+intervals.c:147:8: warning: Calls to MPI_Barrier may be avoided from this location
+  147 |     if ( process_num <= 1 )
+      |        ^
+```
+
+On le retrouve [ici](https://people.sc.fsu.edu/~jburkardt/c_src/mpi/intervals_mpi.c).
