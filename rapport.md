@@ -99,7 +99,7 @@ tant que pile.size() > 0:
 	pour tout successeur de current_bb:
 		pile.push((successor, index))
 
-renvoie true
+retourner true
 ```
 
 Tout d'abord, pour simplifier le code, une suite est déterminée avec un parcours simple du graphe: seul le premier successeur de chaque noeud est pris en compte, et tous les appels aux collectives sont relevés et stockés, dans l'ordre, dans le tableau 'suite'.

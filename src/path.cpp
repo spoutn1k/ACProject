@@ -68,6 +68,10 @@ bool PathFinder::common_path() {
 			// If it is not from a loop, we push all of its successors to be evaluated
 			FOR_EACH_EDGE (arc, edge_iter, current->succs)
 				stack.push_back(stack_el(arc->dest, index));
+
+			// If we arrive at the end of the graph, and the whole path has not been discovered
+			if (!EDGE_COUNT(current->succs) && index != path.size())
+				return false;
 		}
 		// NOTE it is important to test before iterating on the edges
 		// as not adding a loop's header would impair the search
