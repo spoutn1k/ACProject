@@ -33,9 +33,9 @@ DEFMPICOLLECTIVES( MPI_BARRIER, "MPI_Barrier" )
 
 Ce format nous permet de créer dynamiquement un `enum` à l'aide de `macros` `C`:
 ```
-#define DEFMPICOLLECTIVES( CODE, NAME ) if(!strcmp(func_name, NAME)){return index;}else{index++;};
+#define DEFMPICOLLECTIVES( CODE, NAME ) if(!strcmp(func_name, NAME)){return i;}else{i++;};
 int is_mpi(const char* func_name) {
-    int index = 0;
+    int i = 0;
 #include "MPI_collectives.def"
     return -1;
 };
