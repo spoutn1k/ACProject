@@ -169,6 +169,89 @@ Les directives sont interprêtées par deux fonctions définies par le plugin :
 
 Lors de l'exécution de la passe, la fonction `gate` du plugin prend en compte les fonctions enregistrées pendant `handle_pragma_function` pour ne lancer l'exécution que sur les fonctions spécifiées.
 
+## Tests
+
+### Test 1 :
+
+__Code source :__
+
+```
+int easy1(int a) {
+        if (a = 0){
+                MPI_Barrier(MPI_COMM_WORLD);
+        }
+        else
+                MPI_Barrier(MPI_COMM_WORLD);
+        return 0;
+}
+```
+
+__CFG :
+
+![test](easy3.png)
+
+__Résultat : 
+
+Aucun problème, la PDF de l'ensemble {3,4} est nulle, il n'y a donc aucun noeuds à risque.
+
+### Test 2 :
+
+__Code source :__ 
+
+```
+int easy2(int a) {
+        if (a = 0){
+                MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Finalize();
+        }
+        else {
+		MPI_Finalize();
+                MPI_Barrier(MPI_COMM_WORLD);
+	}
+        return 0;
+}
+```
+__CFG :
+
+![test](easy2.png)
+
+__Résultat :
+
+```
+test2.c: In function ‘easy2’:
+test2.c:18:5: warning: Calls to MPI_Finalize may be avoided from this location
+   18 |  if (a = 0){
+      |     ^
+test2.c:18:5: warning: Calls to MPI_Barrier may be avoided from this location`
+   18 |  if (a = 0){
+      |     ^
+```
+Ici, la PDF des deux ensembles contient le noeud 2. Lors de l'analyse des chemins à partir du noeud 2, les séquences ne sont pas les mêmes. La passe renvoie donc un warning vers le basic block 2.
+
+### Test 3
+
+__Code Source :
+
+```
+int easy3(int a) {
+        if (a = 0){
+                MPI_Barrier(MPI_COMM_WORLD);
+                MPI_Barrier(MPI_COMM_WORLD);
+        }
+        else
+                MPI_Barrier(MPI_COMM_WORLD);
+        return 0;
+}
+```
+__CFG :
+
+![test](easy1.png)
+
+__Résultat :
+
+La passe ne renvoie rien alors qu'il y a un problème. En effet, elle travaille sur l'ensemble de noeuds {3,4,6} et la PDF de cet ensemble est vide. Elle n'effectue donc pas l'analyse des chemins et ne détecte donc pas la différence de séquence d'appels entre les deux chemins. Pour qu'elle traite ce problème, il faudrait séparer l'ensemble de travail en {3,4} et {6}.
+
+---
 ## Conclusion
 
 Le projet dans son ensemble répond à la problématique donnée. La passe de compilation analyse l'algorithme, et renvoie un avertissement à l'utilisateur lorsqu'une divergence est détectée.
@@ -176,6 +259,8 @@ Le projet dans son ensemble répond à la problématique donnée. La passe de co
 La gestion des directives est elle assez claire et flexible pour permettre le contrôle efficace de son comportement.
 
 Cependant, ne pas prendre en compte les boucles s'est révélé être un pari risqué, le programme pouvant ne pas détecter un problème, voire tomber dans une impasse lorsque plusieurs boucles sont adjacentes: le parcours de graphe n'arrive tout simplement pas à suivre.
+
+En outre, l'implémentation d'une analyse inter-procédurale permettrait à la passe de détecter plus de cas posant des problèmes et même de corriger des cas ne posant finalement pas de problème. Cela lui permettrait d'effectuer donc une analyse enore plus juste du programme.
 
 ## Sources
 
