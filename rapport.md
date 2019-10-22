@@ -3,7 +3,7 @@ Gavoille Clément - Skutnik Jean-Baptiste
 
 ## Introduction
 
-Le framework `MPI` met en place des fonctions permettant aux programmes de communiquer lors de l'exécution pour faciliter la parallélisation de calculs. Cependant,le fait d'introduire des communications dans un code peut entraîner des ralentissements, voire des arrêts indéfinis lors d'une erreur ou d'un mauvais agencement des fonctions de communication par l'utilisateur.
+Le framework `MPI` met en place des fonctions permettant aux programmes de communiquer lors de l'exécution pour faciliter la parallélisation de calculs. Cependant, le fait d'introduire des communications dans un code peut entraîner des ralentissements, voire des arrêts indéfinis lors d'une erreur ou d'un mauvais agencement des fonctions de communication par l'utilisateur.
 
 Ce projet propose de créer un plugin `GCC` qui, lors de la compilation, va vérifier que les fonctions collectives `MPI` sont traversées par tous les cas possibles d'exécution du programme, assurant ainsi que le programme ne sera jamais dans une impasse. En effet, tant que tous les processus MPI n'appelle pas la même fonction collective, ils se bloquent.
 
@@ -11,7 +11,8 @@ Pour se faire, l'utilisation de l'`API GCC` est indispensable car elle permet d'
 
 ## Partie 1: Vérification de la séquence d'appel aux fonctions collectives MPI
 
-La passe de compilation travaille sur une représentation du code interne à `GCC` qui prend la forme d'un graphe orienté nommé `Control Flow Graph` ou `CFG` dans la suite de ce rapport. Il représente le code et les différentes suites d'instructions pouvant être exécutées lors de l'exécution d'un programme.  
+La passe de compilation travaille sur une représentation du code interne à `GCC` qui prend la forme d'un graphe orienté nommé `Control Flow Graph` ou `CFG` dans la suite de ce rapport. Il représente le code et les différentes suites d'instructions pouvant être exécutées lors de l'exécution d'un programme.
+
 Les liaisons entre les différents noeuds correspondent aux tests logiques effectués lors de l'exécution du programme. Les noeuds qui le composent sont eux appelés des `Basic Blocks`.
 
 La lecture de ce graphe est __indépendante du langage du code source__ dont il résulte. Les portions de code sont transformées en déclarations de forme normée `GENERIC`, mais l'analyse est faite sur des simplifications de cette norme: le format `GIMPLE`.
@@ -32,9 +33,9 @@ DEFMPICOLLECTIVES( MPI_BARRIER, "MPI_Barrier" )
 
 Ce format nous permet de créer dynamiquement un `enum` à l'aide de `macros` `C`:
 ```
-#define DEFMPICOLLECTIVES( CODE, NAME ) if(!strcmp(func_name, NAME)){return index;}else{index++;};
+#define DEFMPICOLLECTIVES( CODE, NAME ) if(!strcmp(func_name, NAME)){return i;}else{i++;};
 int is_mpi(const char* func_name) {
-    int index = 0;
+    int i = 0;
 #include "MPI_collectives.def"
     return -1;
 };
@@ -167,6 +168,14 @@ Les directives sont interprêtées par deux fonctions définies par le plugin :
 - `wrap_mpicoll`: génère un avertissement pour toutes les fonctions dans la zone mémoire à la fin de l'exécution de `GCC`, indiquant que leur définition n'a pas été trouvée dans le code.
 
 Lors de l'exécution de la passe, la fonction `gate` du plugin prend en compte les fonctions enregistrées pendant `handle_pragma_function` pour ne lancer l'exécution que sur les fonctions spécifiées.
+
+## Conclusion
+
+Le projet dans son ensemble répond à la problématique donnée. La passe de compilation analyse l'algorithme, et renvoie un avertissement à l'utilisateur lorsqu'une divergence est détectée.
+
+La gestion des directives est elle assez claire et flexible pour permettre le contrôle efficace de son comportement.
+
+Cependant, ne pas prendre en compte les boucles s'est révélé être un pari risqué, le programme pouvant ne pas détecter un problème, voire tomber dans une impasse lorsque plusieurs boucles sont adjacentes: le parcours de graphe n'arrive tout simplement pas à suivre.
 
 ## Sources
 
