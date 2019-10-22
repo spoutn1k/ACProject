@@ -3,26 +3,25 @@ Gavoille Clément - Skutnik Jean-Baptiste
 
 ## Introduction
 
-Le framework `MPI` met en place des fonctions permettant aux programmes de communiquer lors de l'exécution pour faciliter la parallélisation de calculs. Cependant introduire des communications dans un code peut entraîner des ralentissements, voir des arrêts indéfinis lors d'une erreur ou d'un mauvais agencement des fonctions de communication par l'utilisateur.
+Le framework `MPI` met en place des fonctions permettant aux programmes de communiquer lors de l'exécution pour faciliter la parallélisation de calculs. Cependant,le fait d'introduire des communications dans un code peut entraîner des ralentissements, voire des arrêts indéfinis lors d'une erreur ou d'un mauvais agencement des fonctions de communication par l'utilisateur.
 
-Ce projet propose de créer un plugin `GCC`, qui lors de la compilation, va vérifier que les fonctions collectives `MPI` sont traversées par tous les cas possibles d'exécution du programme, assurant ainsi que le programme ne sera jamais dans une impasse.
+Ce projet propose de créer un plugin `GCC` qui, lors de la compilation, va vérifier que les fonctions collectives `MPI` sont traversées par tous les cas possibles d'exécution du programme, assurant ainsi que le programme ne sera jamais dans une impasse. En effet, tant que tous les processus MPI n'appelle pas la même fonction collective, ils se bloquent.
 
-Pour ce faire, l'utilisation de l'`API GCC` est indispensable, permettant d'interagir avec les étapes de compilation, en introduisant une 'passe' qui implémente certaines fonctions clés.
+Pour se faire, l'utilisation de l'`API GCC` est indispensable car elle permet d'interagir avec les étapes de compilation. L'ensemble du projet consiste à l'implémentation d'une "passe" de compilation.
 
 ## Partie 1: Vérification de la séquence d'appel aux fonctions collectives MPI
 
-La passe de compilation travaille sur une représentation du code interne à `GCC`, qui prend la forme d'un graphe orienté, nommé `Control Flow Graph`, qui représente le code et les différentes suites d'instructions pouvant être exécutées lors de l'exécution d'un programme.  
-Les liaisons entre les différents noeuds correspondent aux tests logiques effectués lors de l'exécutiondu programme.  
-Cette structure de graphe est nommée `Control Flow Graph`, ou `CFG` dans la suite de ce rapport. Les noeuds qui le composent sont eux appelés des `Basic Blocks`.
+La passe de compilation travaille sur une représentation du code interne à `GCC` qui prend la forme d'un graphe orienté nommé `Control Flow Graph` ou `CFG` dans la suite de ce rapport. Il représente le code et les différentes suites d'instructions pouvant être exécutées lors de l'exécution d'un programme.  
+Les liaisons entre les différents noeuds correspondent aux tests logiques effectués lors de l'exécution du programme. Les noeuds qui le composent sont eux appelés des `Basic Blocks`.
 
-La lecture de ce graphe est indépendante du langage du code source dont il résulte. Les portions de code sont transformées en déclarations de forme normée `GENERIC`, mais l'analyse est faite sur des simplifications de cette norme: le format `GIMPLE`.
+La lecture de ce graphe est __indépendante du langage du code source__ dont il résulte. Les portions de code sont transformées en déclarations de forme normée `GENERIC`, mais l'analyse est faite sur des simplifications de cette norme: le format `GIMPLE`.
 
 ### Détection des appels aux fonctions collectives MPI
 
 La détection des appels de fonction à l'intérieur du code se fait en parcourant la liste des instructions contenues dans les blocs de codes du `CFG`.  
-Ces blocs, sous format `GIMPLE` sont parcourus à la recherche d'appels de fonctions : les fonctions appelées sont alors comparées à une liste pré-déterminée des fonctions d'intérêt sur lesquelles notre analyse se base. 
+Ces blocs, sous format `GIMPLE` sont parcourus à la recherche d'appels de fonctions. On compare ensuite celles-ci à une liste pré-déterminée des fonctions d'intérêt sur lesquelles on base notre analyse. 
 
-Le fichier `MPI_colectives.def` définit les appels `MPI` supportés. Il contient les déclarations suivantes:
+Le fichier `MPI_collectives.def` définit les appels `MPI` supportés. Il contient ici les déclarations suivantes:
 ```
 DEFMPICOLLECTIVES( MPI_INIT, "MPI_Init" )
 DEFMPICOLLECTIVES( MPI_FINALIZE, "MPI_Finalize" )
@@ -31,7 +30,7 @@ DEFMPICOLLECTIVES( MPI_ALL_REDUCE, "MPI_AllReduce" )
 DEFMPICOLLECTIVES( MPI_BARRIER, "MPI_Barrier" )
 ```
 
-Ce format nous permet de créer dynamiquement du code à l'aide de `macros` `C`:
+Ce format nous permet de créer dynamiquement un `enum` à l'aide de `macros` `C`:
 ```
 #define DEFMPICOLLECTIVES( CODE, NAME ) if(!strcmp(func_name, NAME)){return index;}else{index++;};
 int is_mpi(const char* func_name) {
@@ -42,23 +41,21 @@ int is_mpi(const char* func_name) {
 #undef DEFMPICOLLECTIVES
 ```
 
-Rajouter une collective cible à notre analyse revient donc à ajouter une simple ligne dans le fichier `MPI_collectives.def`. 
-
-Dans le code, le fichier `MPI_collectives.def` est interprêté pour créer un `enum`, dont les codes correspondent à la ligne de la fonction `MPI` dans le fichier.
+Rajouter une collective cible à notre analyse revient donc à ajouter une simple ligne dans le fichier `MPI_collectives.def`.
 
 ### Préparation du contexte
 
-Les `basic blocks`, composant les noeuds du graphe, peuvent contenir de multiples appels de fonctions. Pour faciliter l'analyse du code, la première étape de notre passe est une étape de modification du graphe qui consiste à scinder les `basic blocks` pour qu'ils contiennent __au plus__ un appel de collective `MPI`.
+Les `basic blocks`, composant les noeuds du `CFG`, peuvent contenir de multiples appels aux fonctions cibles. Pour faciliter l'analyse du code, la première étape de notre passe modifie le graphe en scindant les `basic blocks` afin qu'ils contiennent __au plus__ un appel de collective `MPI`.
 
-La mise en place de cet axiome facilite grandement l'analyse du graphe, et ne change en rien la sémantique du programme. Par la suite, il sera supposé que chaque appel à une collective `MPI` est unique dans le `basic block` où elle se trouve.
+La mise en place de cet axiome facilite grandement l'analyse du graphe, et ne changera en rien la sémantique du programme. En effet, les basic blocks ainsi créés seront ensuite recollés par une autre passe d'optimisation. Par la suite, il sera supposé que chaque appel à une collective `MPI` est unique dans le `basic block` où elle se trouve.
 
-La séparation des blocs se fait grâce à la fonction `isolate_mpi` définie dans `mpi_detection.cpp`. Elle appelle la méthode `split_block` de l'`API GCC` pour scinder les noeuds, en donnant l'assertion `GIMPLE` correspondante.
+La séparation des blocs se fait grâce à la fonction `isolate_mpi()` définie dans `mpi_detection.cpp`. Elle appelle la méthode `split_block()` de l'`API GCC` pour scinder les noeuds, en donnant l'assertion `GIMPLE` correspondante.
 
 ### Étude du graphe de flot de contrôle pour déterminer les divergences
 
-Les noeuds contenant des collectives `MPI` à analyser sont regroupés en ensembles, représentés en mémoire par des `bitmaps`, de l'`API GCC`.
+Les noeuds contenant des collectives `MPI` à analyser sont regroupés en ensembles, représentés en mémoire par des `bitmaps` définies dans l'`API GCC`.
 
-Dans le code, la fonction `mpi_calls` effectue ce traitement. Elle renvoie un tableau de `bitmaps` de taille égale au nombre de collectives `MPI` définies dans le programme. Dans la `bitmap` d'index `k`, les bits d'index `i` valent `1` si le `basic block` d'index `i` contient la collective d'index `k` correspondant.
+Dans le code, c'est la fonction `mpi_calls()` qui effectue ce traitement. Elle renvoie un tableau de `bitmaps` de taille égale au nombre de collectives `MPI` définies dans le programme. Ainsi, dans la `bitmap` d'index `k`, les bits d'index `i` valent `1` si le `basic block` d'index `i` contient la collective d'index `k` correspondante.
 
 Ces ensembles sont alors utilisés dans le calcul de leur frontières de post-dominance. On calcule la frontière de post-dominance d'un noeud de la manière suivante:
 
@@ -75,7 +72,8 @@ $$
 PDF(N) = \\{z\ |\ z \\in \\cup\_{n \\in N}\ PDF(n),\ z \\in \\cup\_{k \\in \\bar{N}}\ PDF(k) \\}
 $$
 
-La frontière de post-dominance d'un ensemble nous permet de déterminer les noeuds à partir desquels il existe un chemin ne passant pas par un noeud de l'ensemble. La fonction `compute_pdf_sets` renvoie un objet similaire à `mpi_calls` contenant cette information.
+La frontière de post-dominance d'un ensemble nous permet de déterminer les noeuds à partir desquels il existe un chemin ne passant pas par un noeud de l'ensemble. La fonction `compute_pdf_sets()` renvoie un objet similaire à `mpi_calls` contenant cette information.
+Ainsi, si la frontière de post-dominance d'un ensemble est non-vide, on ne va pas appeler les fonctions collectives de cet ensemble et il y a donc possiblité de créer un deadlock.
 
 ### Détermination des noeuds à risque
 
@@ -100,20 +98,21 @@ tant que pile.size() > 0:
 	pour tout successeur de current_bb:
 		pile.push((successor, index))
 
-retourner true
+renvoie true
 ```
 
-Tout d'abord, et pour simplifier le code, une suite est déterminée avec un parcours simple du graphe: seul le premier successeur de chaque noeud est pris en compte, et tous les appels aux collectives sont relevés et stockés, dans l'ordre, dans le tableau 'suite'.
+Tout d'abord, pour simplifier le code, une suite est déterminée avec un parcours simple du graphe: seul le premier successeur de chaque noeud est pris en compte, et tous les appels aux collectives sont relevés et stockés, dans l'ordre, dans le tableau 'suite'.
 
-Cette suite n'a pas pour vocation d'être exacte, mais sert de référence pour le reste de l'algorithme: si toutes les suites d'appels sont identiques, alors cette suite est égale à tous les autres suites calculées.
+Cette suite n'a pas pour vocation d'être exacte, mais sert de référence pour le reste de l'algorithme: si toutes les suites d'appels sont identiques, alors cette suite est égale à tous les autres suites calculées et chaque chemin va donc appeler le sfonctions cibles dans le même ordre.
 
-L'algorithme va alors effectuer un parcours en profondeur classique du graphe, mais stockant dans la pile l'index de la collective recherchée dans la suite d'appel.  
-À chaque appel `MPI` rencontré, le programme vérifie qu'il corresponde à celui de la suite de référence, à l'index indiqué.  
-Si il correspond, le parcours continue, en incrémentant de 1 l'index ; sinon, le programme s'arrête en renvoyant `false`, car cela implique que cette suite d'appel ne suit pas la référence.
+L'algorithme va alors effectuer un parcours en profondeur du graphe, mais en stockant dans la pile, en plus de l'index du basic block, l'index de la collective recherchée dans la suite d'appel.  
+À chaque appel `MPI` rencontré, le programme vérifie qu'il correspond à celui de la suite de référence à l'index indiqué.
 
-Cet algorithme, et les parcours en profondeur en général, peuvent rester bloqués lors de l'analyse de boucles ; et dans des cas d'usage réels des boucles sont garanties.
+Si il y a correspondance, le parcours continue, en incrémentant de 1 l'index. Sinon, le programme s'arrête en renvoyant `false`, car cela implique que cette suite d'appel ne suit pas la référence.
 
-Nous avons pris la décision de ne pas analyser les boucles.
+Cet algorithme, et les parcours en profondeur en général, peuvent rester bloqués lors de l'analyse de boucles. Or, dans des cas réels d'utilisation, des boucles sont garanties.
+
+Nous avons donc pris la décision de ne pas analyser les boucles.
 
 Le framework `GCC` délimitant et catégorisant les boucles à été utilisé pour déterminer l'appartenance d'un `basic_block` à une boucle, mais le système de prédictions de `GCC` n'a pas été utilisé pour faire des suppositions. À la place, le programme évite l'analyse si un noeud à risque est dans une boucle.
 
@@ -158,7 +157,7 @@ Les directives introduites dans le plugin suivent les règles suivantes:
 - Plusieurs directives peuvent apparaître, mais chaque fonction doit être spécifiée une seule fois ; 
 - Une fonction peut être spécifiée uniquement si elle est présente dans le code source.
 
-Enfreindre une de ces règles provoquera un avertissement pour l'utilisateur.
+Enfreindre une de ces règles enverra un avertissement pour l'utilisateur.
 
 ### Gestion des directives
 
