@@ -1,4 +1,5 @@
 #include "path.h"
+#include <diagnostic.h>
 #define SAME_LOOP(bb1, bb2) (bb1->loop_father->num == bb2->loop_father->num)
 
 PathFinder::PathFinder(basic_block bb) {
@@ -21,7 +22,9 @@ bool PathFinder::common_path() {
 	edge_iterator edge_iter;
 
 	// First, perform a single run to get a path to compare to
+	warning(0, "Common path checking\n");
 	sample_path();
+	warning(0, "Sample path done\n");
 
 	// Initialize the DFS by inserting the origin node in the stack
 	stack.push_back(stack_el(origin, 0));
@@ -41,6 +44,10 @@ bool PathFinder::common_path() {
 		// If the current bb contains a collective,
 		// compare it to the expected value
 		if ((coll = collective(current)) != -1) {
+			// We found a path that is longer than expected
+			// There are multiple paths
+			if (index == path.size())
+				return false;
 			// If it is different, then all paths are not equal
 			// ABORT and return false
 			if (coll != (int) path[index])
