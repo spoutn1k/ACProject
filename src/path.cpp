@@ -22,9 +22,7 @@ bool PathFinder::common_path() {
 	edge_iterator edge_iter;
 
 	// First, perform a single run to get a path to compare to
-	warning(0, "Common path checking\n");
 	sample_path();
-	warning(0, "Sample path done\n");
 
 	// Initialize the DFS by inserting the origin node in the stack
 	stack.push_back(stack_el(origin, 0));
