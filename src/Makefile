@@ -1,6 +1,6 @@
 PLUGIN_NAME=mpicheck
-CXX=g++_910
-CC=gcc_910
+CXX=g++
+CC=gcc
 PLUGIN_FLAGS=-I`$(CC) -print-file-name=plugin`/include -Wall -fno-rtti -shared -fPIC
 OBJECTS=cfgviz.o mpi_detection.o domination.o directive.o path.o
 

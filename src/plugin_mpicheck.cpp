@@ -54,7 +54,7 @@ class my_pass : public gimple_opt_pass {
 			bitmap_head* sets = mpi_calls();
 			bitmap_head* res = compute_pdf_sets(sets);	
 
-			//cfgviz_dump(fun);
+			cfgviz_dump(fun);
 
 			// For every defined collective
 			for (int i = 0; i < LAST_AND_UNUSED_MPI_COLLECTIVE_CODE; i++) {

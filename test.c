@@ -4,13 +4,14 @@
 #include <mpi.h>
 
 #pragma mpicoll check (easy1,main,easy2,easy3)
+
 int easy1(int a) {
 	if (a = 0){
 		MPI_Barrier(MPI_COMM_WORLD);
+	} else {
+		MPI_Barrier(MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
-	else 
-		MPI_Barrier(MPI_COMM_WORLD);
 	return 0;
 }
 
@@ -18,10 +19,10 @@ int easy2(int a) {
 	if (a = 0){
 		MPI_Barrier(MPI_COMM_WORLD);
 		MPI_Finalize();
-	}
-	else 
+	} else {
 		MPI_Finalize();
 		MPI_Barrier(MPI_COMM_WORLD);
+	}
 	return 0;
 }
 
@@ -29,9 +30,9 @@ int easy2(int a) {
 int easy3(int a) {
 	if (a = 0){
 		MPI_Barrier(MPI_COMM_WORLD);
-	}
-	else 
+	} else {
 		MPI_Barrier(MPI_COMM_WORLD);
+	}
 	return 0;
 }
 

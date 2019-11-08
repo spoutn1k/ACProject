@@ -1,4 +1,3 @@
-PLUGIN_NAME=mpicheck
 CXX=g++
 CC=gcc
 MPICC=mpicc
@@ -6,15 +5,11 @@ LOGFILE=/tmp/log
 PLUGIN_FLAGS=-I`$(CC) -print-file-name=plugin`/include -g -Wall -fno-rtti -shared -fPIC
 CFLAGS=-g -O3
 
-all: test clean view
+all: test
 
-test: test2.c
+test: intervals.c
 	make -C src
-	$(MPICC) test2.c $(CFLAGS) -o /dev/null -fplugin=./src/libplugin_mpicheck.so > $(LOGFILE)
-	make -C src clean
-
-view:
-	less $(LOGFILE)
+	$(MPICC) $^ $(CFLAGS) -o /dev/null -fplugin=./src/libplugin_mpicheck.so
 
 clean:
 	rm -rf *so
